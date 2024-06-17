@@ -11,6 +11,7 @@ _number_drive_pins = adsk.core.ValueCommandInput.cast(None)
 _drive_pin_diameter = adsk.core.ValueCommandInput.cast(None)
 _drive_pin_pattern_diameter = adsk.core.ValueCommandInput.cast(None)
 _rotor_thickness = adsk.core.ValueCommandInput.cast(None)
+_tolerance = adsk.core.ValueCommandInput.cast(None)
 handlers = []
 app = adsk.core.Application.cast(None)
 ui = adsk.core.UserInterface.cast(None)
@@ -52,7 +53,7 @@ class CustomCommandCreatedEventHandler(adsk.core.CommandCreatedEventHandler):
         super().__init__()
     def notify(self, args):
         try:
-            global _eccentricity,_number_lobes,_roller_radius,_rotor_radius,_eccentric_diameter,_number_drive_pins,_drive_pin_pattern_diameter,_drive_pin_diameter,_rotor_thickness
+            global _eccentricity,_number_lobes,_roller_radius,_rotor_radius,_eccentric_diameter,_number_drive_pins,_drive_pin_pattern_diameter,_drive_pin_diameter,_rotor_thickness,_tolerance
             eventArgs = adsk.core.CommandCreatedEventArgs.cast(args)
             des = adsk.fusion.Design.cast(app.activeProduct)
             if not des:
@@ -80,6 +81,7 @@ class CustomCommandCreatedEventHandler(adsk.core.CommandCreatedEventHandler):
             _number_drive_pins = inputs.addStringValueInput("number_drive_pins","Number of drive pins",str(4))
             _drive_pin_diameter = inputs.addValueInput("drive_pin_diameter","Drive pin diameter",_units,adsk.core.ValueInput.createByReal(.8))
             _drive_pin_pattern_diameter = inputs.addValueInput("drive_pin_pattern_diameter","Drive pin pattern diameter",_units,adsk.core.ValueInput.createByReal(3.5))
+            _tolerance = inputs.addValueInput("tolerance","Tolerance",_units,adsk.core.ValueInput.createByReal(.01))
 
             # Connect to the execute event
             onExecute = CustomExecuteHandler()
@@ -115,6 +117,7 @@ class CustomExecuteHandler(adsk.core.CommandEventHandler):
             attribs.add("Cycloid","drive_pin_diameter",str(_drive_pin_diameter.value))
             attribs.add("Cycloid","drive_pin_pattern_diameter",str(_drive_pin_pattern_diameter.value))
             attribs.add("Cycloid","rotor_thickness",str(_rotor_thickness.value))
+            attribs.add("Cycloid","tolerance",str(_tolerance.value))
             rotor_radius = _rotor_radius.value 
             roller_radius = _roller_radius.value 
             rotor_thickness = _rotor_thickness.value
@@ -124,8 +127,9 @@ class CustomExecuteHandler(adsk.core.CommandEventHandler):
             number_drive_pins = int(_number_drive_pins.value)
             drive_pin_diameter = _drive_pin_diameter.value 
             drive_pin_pattern_diameter = _drive_pin_pattern_diameter.value 
+            tolerance = _tolerance.value
             #get the cycloid arrays 
-            X,Y = cycloidal_rotor(rotor_radius,roller_radius,eccentricity,number_lobes)
+            X,Y = cycloidal_rotor(rotor_radius,roller_radius,eccentricity,number_lobes,tolerance)
             # create a new component by creating an occurrence.
             occs = des.rootComponent.occurrences
             mat = adsk.core.Matrix3D.create()
@@ -198,11 +202,21 @@ class CustomCommandInputChangeHandler(adsk.core.InputChangedEventHandler):
             _number_drive_pins.value = _number_drive_pins.value
             _number_lobes.value = _number_lobes.value
             _eccentric_diameter.value = _eccentric_diameter.value
+            _tolerance.value = _tolerance.value
         except:
             if ui:
                 ui.messageBox("Failed:\n{}".format(traceback.format_exc()))
 
-def cycloidal_rotor(R, R_r, E, N, num_points=300):
+def cycloidal_rotor(R, R_r, E, N,T, num_points=300):
+    '''
+    args:
+    R = Rotor Radius
+    R_r = Roller Radius
+    E = eccentricity
+    N = number of lobes
+    T = tolerance (clearance between rotor and roller pins)
+    '''
+    R_r += T
     X, Y = [], []
     for t in range(num_points):
         t = 2 * math.pi * t / num_points
