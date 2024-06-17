@@ -81,7 +81,7 @@ class CustomCommandCreatedEventHandler(adsk.core.CommandCreatedEventHandler):
             _number_drive_pins = inputs.addStringValueInput("number_drive_pins","Number of drive pins",str(4))
             _drive_pin_diameter = inputs.addValueInput("drive_pin_diameter","Drive pin diameter",_units,adsk.core.ValueInput.createByReal(.8))
             _drive_pin_pattern_diameter = inputs.addValueInput("drive_pin_pattern_diameter","Drive pin pattern diameter",_units,adsk.core.ValueInput.createByReal(3.5))
-            _tolerance = inputs.addValueInput("tolerance","Tolerance",_units,adsk.core.ValueInput.createByReal(.01))
+            _tolerance = inputs.addValueInput("tolerance","Tolerance",_units,adsk.core.ValueInput.createByReal(.001))
 
             # Connect to the execute event
             onExecute = CustomExecuteHandler()
